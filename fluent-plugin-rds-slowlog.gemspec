@@ -7,7 +7,7 @@ Gem::Specification.new do |gem|
   gem.version       = "0.0.1"
   gem.authors       = ["kenjiskywalker"]
   gem.email         = ["git@kenjiskywalker.org"]
-  gem.description   = "Amazon AWS input plugin for Fluent event collector"
+  gem.description   = "Amazon RDS slow_log input plugin for Fluent event collector"
   gem.homepage      = "https://github.com/kenjiskywalker/fluent-plugin-rds-slowlog"
 
   gem.files         = `git ls-files`.split($/)
