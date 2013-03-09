@@ -5,8 +5,6 @@
 ## Overview
 ***AWS RDS slow_log*** input plugin.  
 
-*this plug-in has not only test is written in the exp and no test!!!*
-
 1. **"SELECT * FROM slow_log"**
 2. **"CALL mysql.rds_rotate_slow_log"**
 
@@ -24,7 +22,7 @@ every 10 seconds from AWS RDS.
 </source>
 ```
 
-### GET RDS slow_log
+### Example GET RDS slow_log
 
 ```config
 <source>
@@ -54,4 +52,3 @@ every 10 seconds from AWS RDS.
 ## TODO
 
 * more test test test
-* more documents
