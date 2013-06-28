@@ -49,6 +49,14 @@ every 10 seconds from AWS RDS.
 2013-03-08T16:04:43+09:00       rds-slowlog     {"start_time":"2013-03-08 07:04:38","user_host":"rds_db[rds_db] @  [192.0.2.10]","query_time":"00:00:00","lock_time":"00:00:00","rows_sent":"3000","rows_examined":"3000","db":"rds_db","last_insert_id":"0","insert_id":"0","server_id":"100000000","sql_text":"Quit"}
 ```
 
+#### if not connect
+
+- td-agent.log
+
+```
+2013-06-29 00:32:55 +0900 [error]: fluent-plugin-rds-slowlog: cannot connect RDS
+```
+
 ## TODO
 
 * more test test test
