@@ -14,13 +14,17 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
 
   def configure(conf)
     super
-    @client = Mysql2::Client.new({
+    begin
+      @client = Mysql2::Client.new({
         :host => @host,
         :port => @port,
         :username => @username,
         :password => @password,
         :database => 'mysql'
       })
+    rescue
+      $log.error "fluent-plugin-rds-slowlog: cannot connect RDS"
+    end
   end
 
   def start
