@@ -47,7 +47,7 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
   end
 
   def output
-    slow_log_data = {}
+    slow_log_data = []
     slow_log_data = @client.query('SELECT * FROM slow_log', :cast => false)
     @client.query('CALL mysql.rds_rotate_slow_log')
 
