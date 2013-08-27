@@ -1,6 +1,13 @@
 # fluent-plugin-rds-slowlog
 
 
+## RDS Setting
+
+[Working with MySQL Database Log Files / aws documentation](http://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_LogAccess.Concepts.MySQL.html)
+
+- Set the `slow_query_log` parameter to `1`
+- setting `min_examined_row_limit`
+- setting `long_query_time`
 
 ## Overview
 ***AWS RDS slow_log*** input plugin.  
