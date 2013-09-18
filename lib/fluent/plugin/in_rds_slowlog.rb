@@ -49,10 +49,11 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
   def output
     slow_log_data = []
     slow_log_data = @client.query('SELECT * FROM slow_log', :cast => false)
-    @client.query('CALL mysql.rds_rotate_slow_log')
 
     slow_log_data.each do |row|
       Fluent::Engine.emit(tag, Fluent::Engine.now, row)
     end
+
+    @client.query('CALL mysql.rds_rotate_slow_log')
   end
 end
