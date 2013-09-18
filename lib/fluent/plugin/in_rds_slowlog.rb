@@ -1,7 +1,7 @@
 class Fluent::Rds_SlowlogInput < Fluent::Input
   Fluent::Plugin.register_input("rds_slowlog", self)
 
-  config_param :tag, :string
+  config_param :tag,      :string
   config_param :host,     :string,  :default => nil
   config_param :port,     :integer, :default => 3306
   config_param :username, :string,  :default => nil
