@@ -1,4 +1,4 @@
-# fluent-plugin-rds-slowlog
+# fluent-plugin-rds-slowlog [![Build Status](https://travis-ci.org/kenjiskywalker/fluent-plugin-rds-slowlog.png)](https://travis-ci.org/kenjiskywalker/fluent-plugin-rds-slowlog/)
 
 
 ## RDS Setting
