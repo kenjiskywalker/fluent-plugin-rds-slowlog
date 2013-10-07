@@ -64,6 +64,3 @@ every 10 seconds from AWS RDS.
 2013-06-29 00:32:55 +0900 [error]: fluent-plugin-rds-slowlog: cannot connect RDS
 ```
 
-## TODO
-
-* more test test test
