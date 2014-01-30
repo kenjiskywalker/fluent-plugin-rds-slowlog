@@ -51,6 +51,7 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
     slow_log_data = @client.query('SELECT * FROM slow_log', :cast => false)
 
     slow_log_data.each do |row|
+      row.each_key {|key| row[key].force_encoding(Encoding::ASCII_8BIT) if row[key].is_a?(String)}
       Fluent::Engine.emit(tag, Fluent::Engine.now, row)
     end
 
