@@ -1,13 +1,18 @@
 class Fluent::Rds_SlowlogInput < Fluent::Input
   Fluent::Plugin.register_input("rds_slowlog", self)
 
+  # To support log_level option implemented by Fluentd v0.10.43
+  unless method_defined?(:log)
+    define_method("log") { $log }
+  end
+
   config_param :tag,      :string
   config_param :host,     :string,  :default => nil
   config_param :port,     :integer, :default => 3306
   config_param :username, :string,  :default => nil
   config_param :password, :string,  :default => nil
 
-   def initialize
+  def initialize
     super
     require 'mysql2'
   end
@@ -23,7 +28,7 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
         :database => 'mysql'
       })
     rescue
-      $log.error "fluent-plugin-rds-slowlog: cannot connect RDS"
+      log.error "fluent-plugin-rds-slowlog: cannot connect RDS"
     end
   end
 
