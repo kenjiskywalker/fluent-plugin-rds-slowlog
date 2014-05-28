@@ -21,6 +21,9 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
   def configure(conf)
     super
     begin
+      unless @tag
+        raise Fluent::ConfigError.new("tag is required")
+      end
       unless @aws_access_key_id
         raise Fluent::ConfigError.new("aws_access_key_id is required")
       end
@@ -36,9 +39,13 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
       unless @log_file_name
         @log_file_name = 'slowquery/mysql-slowquery.log'
       end
-      unless @marker_file_path
-        raise Fluent::ConfigError.new("marker_file_path is required")
+      unless @marker
+        @marker = '0'
       end
+      unless @timezone
+        @timezone = '+00:00'
+      end
+      @parser = MySlog.new
       init_aws_rds_client
     rescue
       log.error "fluent-plugin-rds-slowlog-whith-sdk: cannot connect RDS"
@@ -60,14 +67,13 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
   
   def init_aws_rds_client
     unless @client
-      options = {}
-      options[:access_key_id]      = @aws_access_key_id
-      options[:secret_access_key]  = @aws_secret_access_key
-      options[:endpoint]           = @aws_rds_endpoint
-      options[:rds_endpoint]       = 'rds.%s.amazonaws.com' % [@aws_rds_region]
-      options[:use_ssl]            = true
-      rds = AWS::RDS.new(options)
-      @client = rds.client
+      @client = AWS::RDS.new({
+        :access_key_id      => @aws_access_key_id,
+        :secret_access_key  => @aws_secret_access_key,
+        :endpoint           => @aws_rds_endpoint,
+        :rds_endpoint       => 'rds.%s.amazonaws.com' % [@aws_rds_region],
+        :use_ssl            => true,
+      }).client
     end
   end
 
@@ -79,14 +85,16 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
   end
 
   def output
-    slow_log_data = []
-    slow_log_data = @client.query('SELECT * FROM slow_log', :cast => false)
-
+    responce = @download_db_log_file_portion({
+      :db_instance_identifier => @db_instance_identifier,
+      :log_file_name          => @log_file_name,
+      :marker                 => @marker,
+    })
+    slow_log_data = @parser.parse(responce[:log_file_data ])
     slow_log_data.each do |row|
       row.each_key {|key| row[key].force_encoding(Encoding::ASCII_8BIT) if row[key].is_a?(String)}
       Fluent::Engine.emit(tag, Fluent::Engine.now, row)
     end
-
-    @client.query('CALL mysql.rds_rotate_slow_log')
+    @marker = responce[:marker]
   end
 end
