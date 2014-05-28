@@ -10,10 +10,9 @@
 - setting `long_query_time`
 
 ## Overview
-***AWS RDS slow_log*** input plugin.  
+***AWS RDS slow_log with SDK*** input plugin.  
 
-1. **"SELECT * FROM slow_log"**
-2. **"CALL mysql.rds_rotate_slow_log"**
+1. **Call API AWS RDS Client DownloadDbLogFilePortion with marker**
 
 every 10 seconds from AWS RDS.
 
@@ -21,11 +20,14 @@ every 10 seconds from AWS RDS.
 
 ```config
 <source>
-  type rds_slowlog
-  tag rds-slowlog-with-sdk
-  host [RDS Hostname]
-  username [RDS Username]
-  password [RDS Password]
+  type                   rds_slowlog
+  tag                    [Unique Tag Name For RDS Instance]
+  aws_access_key_id      [RDS Access Key]
+  aws_secret_access_key  [RDS Secret Key]
+  aws_rds_region         [RDS Region]
+  db_instance_identifier [RDS Instance Identifier]
+  log_file_name          [RDS Slow Log File Name]
+  offset_time            [Offset From UTC]
 </source>
 ```
 
@@ -33,11 +35,14 @@ every 10 seconds from AWS RDS.
 
 ```config
 <source>
-  type rds_slowlog
-  tag rds-slowlog-with-sdk
-  host [RDS Hostname]
-  username [RDS Username]
-  password [RDS Password]
+  type                   rds_slowlog
+  tag                    [Unique Tag Name For RDS Instance]
+  aws_access_key_id      [RDS Access Key]
+  aws_secret_access_key  [RDS Secret Key]
+  aws_rds_region         [RDS Region]
+  db_instance_identifier [RDS Instance Identifier]
+  log_file_name          [RDS Slow Log File Name]
+  offset_time            [Offset From UTC]
 </source>
 
 <match rds-slowlog-with-sdk>
