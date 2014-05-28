@@ -1,4 +1,4 @@
-class Fluent::Rds_SlowlogInput < Fluent::Input
+class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
   Fluent::Plugin.register_input("rds_slowlog", self)
 
   # To support log_level option implemented by Fluentd v0.10.43
