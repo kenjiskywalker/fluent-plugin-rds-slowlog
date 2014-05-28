@@ -21,7 +21,7 @@ every 10 seconds from AWS RDS.
 ```config
 <source>
   type                   rds_slowlog
-  tag                    [Unique Tag Name For RDS Instance]
+  tag                    rds-slowlog-with-sdk
   aws_access_key_id      [RDS Access Key]
   aws_secret_access_key  [RDS Secret Key]
   aws_rds_region         [RDS Region]
@@ -36,7 +36,7 @@ every 10 seconds from AWS RDS.
 ```config
 <source>
   type                   rds_slowlog
-  tag                    [Unique Tag Name For RDS Instance]
+  tag                    rds-slowlog-with-sdk
   aws_access_key_id      [RDS Access Key]
   aws_secret_access_key  [RDS Secret Key]
   aws_rds_region         [RDS Region]
