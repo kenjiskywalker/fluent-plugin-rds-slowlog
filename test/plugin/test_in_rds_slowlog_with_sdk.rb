@@ -6,7 +6,7 @@ class RdsSlowlogWithSdkInputTest < Test::Unit::TestCase
   end
 
   CONFIG = %[
-    tag rds-slowlog
+    tag rds-slowlog-with-sdk
     host localhost
     username test_rds_user
     password test_rds_password
