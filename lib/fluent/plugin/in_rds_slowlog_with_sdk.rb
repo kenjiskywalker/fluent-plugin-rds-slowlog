@@ -6,11 +6,13 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
     define_method("log") { $log }
   end
 
-  config_param :tag,      :string
-  config_param :host,     :string,  :default => nil
-  config_param :port,     :integer, :default => 3306
-  config_param :username, :string,  :default => nil
-  config_param :password, :string,  :default => nil
+  config_param :tag,                    :string, :default => nil
+  config_param :aws_access_key_id,      :string, :default => nil
+  config_param :aws_secret_access_key,  :string, :default => nil
+  config_param :aws_rds_region,         :string, :default => nil
+  config_param :db_instance_identifier, :string, :default => nil
+  config_param :log_file_name,          :string, :default => 'slowquery/mysql-slowquery.log'
+  config_param :offset_time,            :string, :default => '+00:00'
 
   def initialize
     super
@@ -37,14 +39,12 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
         raise Fluent::ConfigError.new("db_instance_identifier is required")
       end
       unless @log_file_name
-        @log_file_name = 'slowquery/mysql-slowquery.log'
+        raise Fluent::ConfigError.new("log_file_name is required")
       end
-      unless @marker
-        @marker = '0'
+      unless @offset_time
+        raise Fluent::ConfigError.new("offset_time is required")
       end
-      unless @timezone
-        @timezone = '+00:00'
-      end
+      @marker = '0'
       @parser = MySlog.new
       init_aws_rds_client
     rescue
