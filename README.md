@@ -1,4 +1,4 @@
-# fluent-plugin-rds-slowlog [![Build Status](https://travis-ci.org/kenjiskywalker/fluent-plugin-rds-slowlog.png)](https://travis-ci.org/kenjiskywalker/fluent-plugin-rds-slowlog/)
+# fluent-plugin-rds-slowlog-with-sdk [![Build Status](https://travis-ci.org/ando-masaki/fluent-plugin-rds-slowlog-with-sdk.svg)](https://travis-ci.org/ando-masaki/fluent-plugin-rds-slowlog-with-sdk)
 
 
 ## RDS Setting
@@ -22,7 +22,7 @@ every 10 seconds from AWS RDS.
 ```config
 <source>
   type rds_slowlog
-  tag rds-slowlog
+  tag rds-slowlog-with-sdk
   host [RDS Hostname]
   username [RDS Username]
   password [RDS Password]
@@ -34,13 +34,13 @@ every 10 seconds from AWS RDS.
 ```config
 <source>
   type rds_slowlog
-  tag rds-slowlog
+  tag rds-slowlog-with-sdk
   host [RDS Hostname]
   username [RDS Username]
   password [RDS Password]
 </source>
 
-<match rds-slowlog>
+<match rds-slowlog-with-sdk>
   type copy
  <store>
   type file
@@ -52,8 +52,8 @@ every 10 seconds from AWS RDS.
 #### output data format
 
 ```
-2013-03-08T16:04:43+09:00       rds-slowlog     {"start_time":"2013-03-08 07:04:38","user_host":"rds_db[rds_db] @  [192.0.2.10]","query_time":"00:00:00","lock_time":"00:00:00","rows_sent":"3000","rows_examined":"3000","db":"rds_db","last_insert_id":"0","insert_id":"0","server_id":"100000000","sql_text":"select foo from bar"}
-2013-03-08T16:04:43+09:00       rds-slowlog     {"start_time":"2013-03-08 07:04:38","user_host":"rds_db[rds_db] @  [192.0.2.10]","query_time":"00:00:00","lock_time":"00:00:00","rows_sent":"3000","rows_examined":"3000","db":"rds_db","last_insert_id":"0","insert_id":"0","server_id":"100000000","sql_text":"Quit"}
+2013-03-08T16:04:43+09:00       rds-slowlog-with-sdk     {"start_time":"2013-03-08 07:04:38","user_host":"rds_db[rds_db] @  [192.0.2.10]","query_time":"00:00:00","lock_time":"00:00:00","rows_sent":"3000","rows_examined":"3000","db":"rds_db","last_insert_id":"0","insert_id":"0","server_id":"100000000","sql_text":"select foo from bar"}
+2013-03-08T16:04:43+09:00       rds-slowlog-with-sdk     {"start_time":"2013-03-08 07:04:38","user_host":"rds_db[rds_db] @  [192.0.2.10]","query_time":"00:00:00","lock_time":"00:00:00","rows_sent":"3000","rows_examined":"3000","db":"rds_db","last_insert_id":"0","insert_id":"0","server_id":"100000000","sql_text":"Quit"}
 ```
 
 #### if not connect
@@ -61,6 +61,6 @@ every 10 seconds from AWS RDS.
 - td-agent.log
 
 ```
-2013-06-29 00:32:55 +0900 [error]: fluent-plugin-rds-slowlog: cannot connect RDS
+2013-06-29 00:32:55 +0900 [error]: fluent-plugin-rds-slowlog-with-sdk: cannot connect RDS
 ```
 
