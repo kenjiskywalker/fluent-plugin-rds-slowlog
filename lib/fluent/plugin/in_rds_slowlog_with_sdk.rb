@@ -1,5 +1,5 @@
 class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
-  Fluent::Plugin.register_input("rds_slowlog", self)
+  Fluent::Plugin.register_input("rds_slowlog_with_sdk", self)
 
   # To support log_level option implemented by Fluentd v0.10.43
   unless method_defined?(:log)
@@ -14,21 +14,34 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
 
   def initialize
     super
-    require 'mysql2'
+    require 'aws-sdk'
+    require 'myslog'
   end
 
   def configure(conf)
     super
     begin
-      @client = Mysql2::Client.new({
-        :host => @host,
-        :port => @port,
-        :username => @username,
-        :password => @password,
-        :database => 'mysql'
-      })
+      unless @aws_access_key_id
+        raise Fluent::ConfigError.new("aws_access_key_id is required")
+      end
+      unless @aws_secret_access_key
+        raise Fluent::ConfigError.new("aws_secret_access_key is required")
+      end
+      unless @aws_rds_region
+        raise Fluent::ConfigError.new("aws_rds_region is required")
+      end
+      unless @db_instance_identifier
+        raise Fluent::ConfigError.new("db_instance_identifier is required")
+      end
+      unless @log_file_name
+        @log_file_name = 'slowquery/mysql-slowquery.log'
+      end
+      unless @marker_file_path
+        raise Fluent::ConfigError.new("marker_file_path is required")
+      end
+      init_aws_rds_client
     rescue
-      log.error "fluent-plugin-rds-slowlog: cannot connect RDS"
+      log.error "fluent-plugin-rds-slowlog-whith-sdk: cannot connect RDS"
     end
   end
 
@@ -44,6 +57,20 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
   end
 
   private
+  
+  def init_aws_rds_client
+    unless @client
+      options = {}
+      options[:access_key_id]      = @aws_access_key_id
+      options[:secret_access_key]  = @aws_secret_access_key
+      options[:endpoint]           = @aws_rds_endpoint
+      options[:rds_endpoint]       = 'rds.%s.amazonaws.com' % [@aws_rds_region]
+      options[:use_ssl]            = true
+      rds = AWS::RDS.new(options)
+      @client = rds.client
+    end
+  end
+
   def watch
     while true
       sleep 10
