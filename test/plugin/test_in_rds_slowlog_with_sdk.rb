@@ -1,6 +1,6 @@
 require 'helper'
 
-class Rds_SlowlogInputTest < Test::Unit::TestCase
+class RdsSlowlogWithSdkInputTest < Test::Unit::TestCase
   def setup
     Fluent::Test.setup
   end
@@ -13,12 +13,12 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
   ]
 
   def create_driver(conf = CONFIG)
-    Fluent::Test::InputTestDriver.new(Fluent::Rds_SlowlogInput).configure(conf)
+    Fluent::Test::InputTestDriver.new(Fluent::RdsSlowlogWithSdkInput).configure(conf)
   end
 
   def test_configure
     d = create_driver
-    assert_equal 'rds-slowlog', d.instance.tag
+    assert_equal 'rds-slowlog-with-sdk', d.instance.tag
     assert_equal 'localhost', d.instance.host
     assert_equal 'test_rds_user', d.instance.username
     assert_equal 'test_rds_password', d.instance.password
