@@ -21,13 +21,14 @@ every 10 seconds from AWS RDS.
 ```config
 <source>
   type                   rds_slowlog_with_sdk
-  tag                    rds-slowlog-with-sdk
+  tag                    [Unique tag for RDS Instance]
   aws_access_key_id      [RDS Access Key]
   aws_secret_access_key  [RDS Secret Key]
   aws_rds_region         [RDS Region]
   db_instance_identifier [RDS Instance Identifier]
   log_file_name          [RDS Slow Log File Name]
-  offset_time            [Offset From UTC]
+  timezone               [Timezone Where RDS Region Exists]
+  offset                 [Offset From UTC]
   duration_sec           [Duration Seconds To Watch Slow Log File]
 </source>
 ```
@@ -40,11 +41,12 @@ every 10 seconds from AWS RDS.
   tag                    rds-slowlog-with-sdk
   aws_access_key_id      [RDS Access Key]
   aws_secret_access_key  [RDS Secret Key]
-  aws_rds_region         [RDS Region]
-  db_instance_identifier [RDS Instance Identifier]
-  log_file_name          [RDS Slow Log File Name]
-  offset_time            [Offset From UTC]
-  duration_sec           [Duration Seconds To Watch Slow Log File]
+  aws_rds_region         ap-northeast-1
+  db_instance_identifier my-rds-server
+  log_file_name          slowquery/mysql-slowquery.log
+  timezone               Asia/Tokyo
+  offset                 +09:00
+  duration_sec           10
 </source>
 
 <match rds-slowlog-with-sdk>
@@ -58,9 +60,17 @@ every 10 seconds from AWS RDS.
 
 #### output data format
 
+Format
+
 ```
-2013-03-08T16:04:43+09:00       rds-slowlog-with-sdk     {"start_time":"2013-03-08 07:04:38","user_host":"rds_db[rds_db] @  [192.0.2.10]","query_time":"00:00:00","lock_time":"00:00:00","rows_sent":"3000","rows_examined":"3000","db":"rds_db","last_insert_id":"0","insert_id":"0","server_id":"100000000","sql_text":"select foo from bar"}
-2013-03-08T16:04:43+09:00       rds-slowlog-with-sdk     {"start_time":"2013-03-08 07:04:38","user_host":"rds_db[rds_db] @  [192.0.2.10]","query_time":"00:00:00","lock_time":"00:00:00","rows_sent":"3000","rows_examined":"3000","db":"rds_db","last_insert_id":"0","insert_id":"0","server_id":"100000000","sql_text":"Quit"}
+slow_query_date	tag	record_json
+```
+
+Example
+
+```
+2014-05-29T16:20:04+09:00	rds-slowlog-with-sdk	{"user":"infra[infra]","host":"ip-10-146-157-87.ap-northeast-1.compute.internal","host_ip":"10.146.157.87","query_time":2.007943,"lock_time":0.0,"rows_sent":1,"rows_examined":0,"date":"2014-05-29 16:20:04 +09:00","sql":"SET timestamp=1401348004; select sleep(2);","timezone":"Asia/Tokyo","offset":"+09:00"}
+2014-05-29T16:20:04+09:00	rds-slowlog-with-sdk	{"user":"infra[infra]","host":"ip-10-146-157-87.ap-northeast-1.compute.internal","host_ip":"10.146.157.87","query_time":2.009605,"lock_time":0.0,"rows_sent":1,"rows_examined":0,"date":"2014-05-29 16:20:04 +09:00","sql":"SET timestamp=1401348004; select sleep(2);","timezone":"Asia/Tokyo","offset":"+09:00"}
 ```
 
 #### if not connect

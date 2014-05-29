@@ -12,13 +12,15 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
   config_param :aws_rds_region,         :string,  :default => nil
   config_param :db_instance_identifier, :string,  :default => nil
   config_param :log_file_name,          :string,  :default => 'slowquery/mysql-slowquery.log'
-  config_param :offset_time,            :string,  :default => '+00:00'
+  config_param :timezone,               :string,  :default => 'UTC'
+  config_param :offset,                 :string,  :default => '+00:00'
   config_param :duration_sec,           :integer, :default => 10
 
   def initialize
     super
     require 'aws-sdk'
     require 'myslog'
+    require 'time'
   end
 
   def configure(conf)
@@ -42,8 +44,13 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
       unless @log_file_name
         raise Fluent::ConfigError.new("log_file_name is required")
       end
-      unless @offset_time
-        raise Fluent::ConfigError.new("offset_time is required")
+      unless @timezone
+        raise Fluent::ConfigError.new("timezone is required")
+      else
+        ENV['TZ'] = @timezone
+      end
+      unless @offset
+        raise Fluent::ConfigError.new("offset is required")
       end
       unless @duration_sec
         raise Fluent::ConfigError.new("duration_sec is required")
@@ -98,8 +105,14 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
       slow_log_data = @parser.parse(responce[:log_file_data])
       slow_log_data.each do |row|
         if row.length > 1
+          if timestamp = row[:sql].match(/SET timestamp=(\d+)/)
+            timestamp = timestamp[1].to_i
+            row[:date] = Time.at(timestamp).strftime('%Y-%m-%d %H:%M:%S %:z')
+          end
+	  row[:timezone] = @timezone
+	  row[:offset] = @offset
           row.each_key {|key| row[key].force_encoding(Encoding::ASCII_8BIT) if row[key].is_a?(String)}
-          Fluent::Engine.emit(tag, Fluent::Engine.now, row)
+          Fluent::Engine.emit(tag, timestamp, row)
         end
       end
     end

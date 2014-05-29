@@ -12,7 +12,8 @@ class RdsSlowlogWithSdkInputTest < Test::Unit::TestCase
     aws_rds_region         ap-northeast-1
     db_instance_identifier some-rds-instance
     log_file_name          slowquery/mysql-slowquery.log
-    offset_time            +00:00
+    timezone               Asia/Tokyo
+    offset                 +09:00
     duration_sec           10
   ]
 
@@ -28,7 +29,8 @@ class RdsSlowlogWithSdkInputTest < Test::Unit::TestCase
     assert_equal 'ap-northeast-1',                d.instance.aws_rds_region
     assert_equal 'some-rds-instance',             d.instance.db_instance_identifier
     assert_equal 'slowquery/mysql-slowquery.log', d.instance.log_file_name
-    assert_equal '+00:00',                        d.instance.offset_time
+    assert_equal 'Asia/Tokyo',                    d.instance.timezone
+    assert_equal '+09:00',                        d.instance.offset
     assert_equal 10,                              d.instance.duration_sec
   end
 
