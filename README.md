@@ -20,7 +20,7 @@ every 10 seconds from AWS RDS.
 
 ```config
 <source>
-  type                   rds_slowlog
+  type                   rds_slowlog_with_sdk
   tag                    rds-slowlog-with-sdk
   aws_access_key_id      [RDS Access Key]
   aws_secret_access_key  [RDS Secret Key]
@@ -28,6 +28,7 @@ every 10 seconds from AWS RDS.
   db_instance_identifier [RDS Instance Identifier]
   log_file_name          [RDS Slow Log File Name]
   offset_time            [Offset From UTC]
+  duration_sec           [Duration Seconds To Watch Slow Log File]
 </source>
 ```
 
@@ -35,7 +36,7 @@ every 10 seconds from AWS RDS.
 
 ```config
 <source>
-  type                   rds_slowlog
+  type                   rds_slowlog_with_sdk
   tag                    rds-slowlog-with-sdk
   aws_access_key_id      [RDS Access Key]
   aws_secret_access_key  [RDS Secret Key]
@@ -43,6 +44,7 @@ every 10 seconds from AWS RDS.
   db_instance_identifier [RDS Instance Identifier]
   log_file_name          [RDS Slow Log File Name]
   offset_time            [Offset From UTC]
+  duration_sec           [Duration Seconds To Watch Slow Log File]
 </source>
 
 <match rds-slowlog-with-sdk>

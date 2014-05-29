@@ -6,13 +6,14 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
     define_method("log") { $log }
   end
 
-  config_param :tag,                    :string, :default => nil
-  config_param :aws_access_key_id,      :string, :default => nil
-  config_param :aws_secret_access_key,  :string, :default => nil
-  config_param :aws_rds_region,         :string, :default => nil
-  config_param :db_instance_identifier, :string, :default => nil
-  config_param :log_file_name,          :string, :default => 'slowquery/mysql-slowquery.log'
-  config_param :offset_time,            :string, :default => '+00:00'
+  config_param :tag,                    :string,  :default => nil
+  config_param :aws_access_key_id,      :string,  :default => nil
+  config_param :aws_secret_access_key,  :string,  :default => nil
+  config_param :aws_rds_region,         :string,  :default => nil
+  config_param :db_instance_identifier, :string,  :default => nil
+  config_param :log_file_name,          :string,  :default => 'slowquery/mysql-slowquery.log'
+  config_param :offset_time,            :string,  :default => '+00:00'
+  config_param :duration_sec,           :integer, :default => 10
 
   def initialize
     super
@@ -43,6 +44,9 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
       end
       unless @offset_time
         raise Fluent::ConfigError.new("offset_time is required")
+      end
+      unless @duration_sec
+        raise Fluent::ConfigError.new("duration_sec is required")
       end
       @marker = '0'
       @parser = MySlog.new
@@ -79,7 +83,7 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
 
   def watch
     while true
-      sleep 10
+      sleep @duration_sec
       output
     end
   end
@@ -90,10 +94,14 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
       :log_file_name          => @log_file_name,
       :marker                 => @marker,
     })
-    slow_log_data = @parser.parse(responce[:log_file_data ])
-    slow_log_data.each do |row|
-      row.each_key {|key| row[key].force_encoding(Encoding::ASCII_8BIT) if row[key].is_a?(String)}
-      Fluent::Engine.emit(tag, Fluent::Engine.now, row)
+    unless responce[:log_file_data].nil?
+      slow_log_data = @parser.parse(responce[:log_file_data])
+      slow_log_data.each do |row|
+        if row.length > 1
+          row.each_key {|key| row[key].force_encoding(Encoding::ASCII_8BIT) if row[key].is_a?(String)}
+          Fluent::Engine.emit(tag, Fluent::Engine.now, row)
+        end
+      end
     end
     @marker = responce[:marker]
   end

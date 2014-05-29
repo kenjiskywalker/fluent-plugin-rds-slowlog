@@ -13,6 +13,7 @@ class RdsSlowlogWithSdkInputTest < Test::Unit::TestCase
     db_instance_identifier some-rds-instance
     log_file_name          slowquery/mysql-slowquery.log
     offset_time            +00:00
+    duration_sec           10
   ]
 
   def create_driver(conf = CONFIG)
@@ -28,6 +29,7 @@ class RdsSlowlogWithSdkInputTest < Test::Unit::TestCase
     assert_equal 'some-rds-instance',             d.instance.db_instance_identifier
     assert_equal 'slowquery/mysql-slowquery.log', d.instance.log_file_name
     assert_equal '+00:00',                        d.instance.offset_time
+    assert_equal 10,                              d.instance.duration_sec
   end
 
 end
