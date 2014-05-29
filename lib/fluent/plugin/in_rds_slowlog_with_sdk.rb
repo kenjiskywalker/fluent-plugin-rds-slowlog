@@ -93,9 +93,11 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
   end
 
   def init_marker
+    unless File.exist?(@pos_file)
+      File.open(@pos_file, 'w'){|fp|fp.sync = true; fp.write '0'}
+    end
     unless @marker
       @marker = File.open(@pos_file, 'r').read
-      @marker = @marker.empty? ? '0' : @marker
     end
   end
 
@@ -125,7 +127,7 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
 	  row[:offset] = @offset
           row.each_key {|key| row[key].force_encoding(Encoding::ASCII_8BIT) if row[key].is_a?(String)}
           Fluent::Engine.emit(tag, timestamp, row)
-	  File.open(@pos_file, 'w+'){|fp|fp.sync = true; fp.write responce[:marker]}
+	  File.open(@pos_file, 'w'){|fp|fp.sync = true; fp.write responce[:marker]}
         end
       end
     end
