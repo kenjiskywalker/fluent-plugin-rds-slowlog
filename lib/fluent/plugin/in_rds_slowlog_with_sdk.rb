@@ -127,9 +127,9 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
 	  row[:offset] = @offset
           row.each_key {|key| row[key].force_encoding(Encoding::ASCII_8BIT) if row[key].is_a?(String)}
           Fluent::Engine.emit(tag, timestamp, row)
-	  File.open(@pos_file, 'w'){|fp|fp.sync = true; fp.write responce[:marker]}
         end
       end
+      File.open(@pos_file, 'w'){|fp|fp.sync = true; fp.write responce[:marker]}
     end
     @marker = responce[:marker]
   end
