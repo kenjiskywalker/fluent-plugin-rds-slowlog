@@ -30,6 +30,7 @@ every 10 seconds from AWS RDS.
   timezone               [Timezone Where RDS Region Exists]
   offset                 [Offset From UTC]
   duration_sec           [Duration Seconds To Watch Slow Log File]
+  pos_file               [Position File Path (Default /tmp/rds-slowlog-with-sdk-[tag].pos)]
 </source>
 ```
 
