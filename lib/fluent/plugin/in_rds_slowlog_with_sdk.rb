@@ -15,6 +15,7 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
   config_param :timezone,               :string,  :default => 'UTC'
   config_param :offset,                 :string,  :default => '+00:00'
   config_param :duration_sec,           :integer, :default => 10
+  config_param :pos_file,               :string,  :default => nil
 
   def initialize
     super
@@ -55,11 +56,13 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
       unless @duration_sec
         raise Fluent::ConfigError.new("duration_sec is required")
       end
-      @marker = '0'
+      unless @pos_file
+        @pos_file = '/tmp/fluent-plugin-rds-slowlog-with-sdk-%s.pos' % [@tag]
+      end
       @parser = MySlog.new
       init_aws_rds_client
     rescue
-      log.error "fluent-plugin-rds-slowlog-whith-sdk: cannot connect RDS"
+      log.error "fluent-plugin-rds-slowlog-with-sdk: cannot connect RDS"
     end
   end
 
@@ -70,6 +73,7 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
 
   def shutdown
     super
+    
     @watcher.terminate
     @watcher.join
   end
@@ -85,6 +89,13 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
         :rds_endpoint       => 'rds.%s.amazonaws.com' % [@aws_rds_region],
         :use_ssl            => true,
       }).client
+    end
+  end
+
+  def init_marker
+    unless @marker
+      @marker = File.open(@pos_file, 'r').read
+      @marker = @marker.empty? ? '0' : @marker
     end
   end
 
@@ -113,6 +124,7 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
 	  row[:offset] = @offset
           row.each_key {|key| row[key].force_encoding(Encoding::ASCII_8BIT) if row[key].is_a?(String)}
           Fluent::Engine.emit(tag, timestamp, row)
+	  File.open(@pos_file, 'w+'){|fp|fp.sync = true; fp.write responce[:marker]}
         end
       end
     end
