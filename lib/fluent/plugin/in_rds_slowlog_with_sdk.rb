@@ -107,6 +107,7 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
   end
 
   def output
+    init_marker
     responce = @client.download_db_log_file_portion({
       :db_instance_identifier => @db_instance_identifier,
       :log_file_name          => @log_file_name,
