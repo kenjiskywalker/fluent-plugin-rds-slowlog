@@ -15,6 +15,7 @@ class RdsSlowlogWithSdkInputTest < Test::Unit::TestCase
     timezone               Asia/Tokyo
     offset                 +09:00
     duration_sec           10
+    pos_file               /path/to/file
   ]
 
   def create_driver(conf = CONFIG)
@@ -32,6 +33,7 @@ class RdsSlowlogWithSdkInputTest < Test::Unit::TestCase
     assert_equal 'Asia/Tokyo',                    d.instance.timezone
     assert_equal '+09:00',                        d.instance.offset
     assert_equal 10,                              d.instance.duration_sec
+    assert_equal '/path/to/file',                 d.instance.pos_file
   end
 
 end
