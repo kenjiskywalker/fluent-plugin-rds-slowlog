@@ -16,12 +16,14 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
   config_param :offset,                 :string,  :default => '+00:00'
   config_param :duration_sec,           :integer, :default => 10
   config_param :pos_file,               :string,  :default => nil
+  config_param :sns_topic_arn,          :string,  :default => nil
 
   def initialize
     super
     require 'aws-sdk'
     require 'myslog'
     require 'time'
+    require 'json'
   end
 
   def configure(conf)
@@ -59,8 +61,12 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
       unless @pos_file
         @pos_file = '/tmp/fluent-plugin-rds-slowlog-with-sdk-%s.pos' % [@tag]
       end
+      unless @sns_topic_arn
+        raise Fluent::ConfigError.new("sns_topic_arn is required")
+      end
       @parser = MySlog.new
       init_aws_rds_client
+      init_aws_sns_client
     rescue
       log.error "fluent-plugin-rds-slowlog-with-sdk: cannot connect RDS"
     end
@@ -81,13 +87,23 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
   private
   
   def init_aws_rds_client
-    unless @client
-      @client = AWS::RDS.new({
+    unless @rds_client
+      @rds_client = AWS::RDS.new({
         :access_key_id      => @aws_access_key_id,
         :secret_access_key  => @aws_secret_access_key,
-        :endpoint           => @aws_rds_endpoint,
         :rds_endpoint       => 'rds.%s.amazonaws.com' % [@aws_rds_region],
         :use_ssl            => true,
+      }).client
+    end
+  end
+
+  def init_aws_sns_client
+    unless @sns_client
+      @sns_client = AWS::SNS.new({
+        :access_key_id      => @aws_access_key_id,
+	:secret_access_key  => @aws_secret_access_key,
+	:sns_endpoint       => 'sns.%s.amazonaws.com' % [@aws_rds_region],
+	:use_ssl            => true,
       }).client
     end
   end
@@ -110,11 +126,12 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
 
   def output
     init_marker
-    responce = @client.download_db_log_file_portion({
+    $params = {
       :db_instance_identifier => @db_instance_identifier,
       :log_file_name          => @log_file_name,
       :marker                 => @marker,
-    })
+    }
+    responce = @rds_client.download_db_log_file_portion($params)
     unless responce[:log_file_data].nil?
       slow_log_data = @parser.parse(responce[:log_file_data])
       slow_log_data.each do |row|
@@ -132,5 +149,20 @@ class Fluent::RdsSlowlogWithSdkInput < Fluent::Input
       File.open(@pos_file, 'w'){|fp|fp.sync = true; fp.write responce[:marker]}
     end
     @marker = responce[:marker]
+  rescue AWS::RDS::Errors::InvalidParameterValue => e
+    unless @marker == '0'
+      File.open(@pos_file, 'w'){|fp|fp.sync = true; fp.write @marker}
+      @sns_client.publish({
+        :topic_arn => @sns_topic_arn,
+        :subject => 'SNS Message',
+        :message => {
+          :Time    => Time.at(timestamp).strftime('%Y-%m-%d %H:%M:%S %:z'),
+          :Method  => 'AWS::RDS::Client.download_db_log_file_portion',
+	  :Params  => @params,
+          :Message => e.message,
+        }.to_json,
+      })
+      @marker = '0'
+    end
   end
 end

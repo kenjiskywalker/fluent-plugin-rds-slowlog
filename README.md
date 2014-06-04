@@ -8,6 +8,7 @@
 - Set the `slow_query_log` parameter to `1`
 - setting `min_examined_row_limit`
 - setting `long_query_time`
+- Set the `log-output` parameter to `FILE`
 
 ## Overview
 ***AWS RDS slow_log with SDK*** input plugin.  
@@ -30,7 +31,8 @@ every 10 seconds from AWS RDS.
   timezone               [Timezone Where RDS Region Exists]
   offset                 [Offset From UTC]
   duration_sec           [Duration Seconds To Watch Slow Log File]
-  pos_file               [Position File Path (Default /tmp/rds-slowlog-with-sdk-[tag].pos)]
+  pos_file               [Position File Path (Default /tmp/rds-slowlog-with-sdk-[tag].pos)
+  sns_topic_arn          [SNS Topic Arn For Exception Occured]]
 </source>
 ```
 
@@ -48,6 +50,7 @@ every 10 seconds from AWS RDS.
   timezone               Asia/Tokyo
   offset                 +09:00
   duration_sec           10
+  sns_topic_arn          arn:aws:sns:ap-northeast-1:XXXXXXXXXXXX:sns-topic-arn
 </source>
 
 <match rds-slowlog-with-sdk>

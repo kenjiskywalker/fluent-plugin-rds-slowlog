@@ -16,6 +16,7 @@ class RdsSlowlogWithSdkInputTest < Test::Unit::TestCase
     offset                 +09:00
     duration_sec           10
     pos_file               /path/to/file
+    sns_topic_arn          arn:aws:sns:ap-northeast-1:xx
   ]
 
   def create_driver(conf = CONFIG)
@@ -34,6 +35,7 @@ class RdsSlowlogWithSdkInputTest < Test::Unit::TestCase
     assert_equal '+09:00',                        d.instance.offset
     assert_equal 10,                              d.instance.duration_sec
     assert_equal '/path/to/file',                 d.instance.pos_file
+    assert_equal 'arn:aws:sns:ap-northeast-1:xx', d.instance.sns_topic_arn
   end
 
 end
