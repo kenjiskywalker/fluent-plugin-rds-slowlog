@@ -1,4 +1,4 @@
-# fluent-plugin-rds-slowlog [![Build Status](https://travis-ci.org/kenjiskywalker/fluent-plugin-rds-slowlog.png)](https://travis-ci.org/kenjiskywalker/fluent-plugin-rds-slowlog/)
+# fluent-plugin-rds-slowlog-with-sdk [![Build Status](https://travis-ci.org/ando-masaki/fluent-plugin-rds-slowlog-with-sdk.svg)](https://travis-ci.org/ando-masaki/fluent-plugin-rds-slowlog-with-sdk)
 
 
 ## RDS Setting
@@ -8,12 +8,12 @@
 - Set the `slow_query_log` parameter to `1`
 - setting `min_examined_row_limit`
 - setting `long_query_time`
+- Set the `log-output` parameter to `FILE`
 
 ## Overview
-***AWS RDS slow_log*** input plugin.  
+***AWS RDS slow_log with SDK*** input plugin.  
 
-1. **"SELECT * FROM slow_log"**
-2. **"CALL mysql.rds_rotate_slow_log"**
+1. **Call API AWS RDS Client DownloadDbLogFilePortion with marker**
 
 every 10 seconds from AWS RDS.
 
@@ -21,11 +21,18 @@ every 10 seconds from AWS RDS.
 
 ```config
 <source>
-  type rds_slowlog
-  tag rds-slowlog
-  host [RDS Hostname]
-  username [RDS Username]
-  password [RDS Password]
+  type                   rds_slowlog_with_sdk
+  tag                    [Unique tag for RDS Instance]
+  aws_access_key_id      [RDS Access Key]
+  aws_secret_access_key  [RDS Secret Key]
+  aws_rds_region         [RDS Region]
+  db_instance_identifier [RDS Instance Identifier]
+  log_file_name          [RDS Slow Log File Name]
+  timezone               [Timezone Where RDS Region Exists]
+  offset                 [Offset From UTC]
+  duration_sec           [Duration Seconds To Watch Slow Log File]
+  pos_file               [Position File Path (Default /tmp/rds-slowlog-with-sdk-[tag].pos)
+  sns_topic_arn          [SNS Topic Arn For Exception Occured]]
 </source>
 ```
 
@@ -33,14 +40,20 @@ every 10 seconds from AWS RDS.
 
 ```config
 <source>
-  type rds_slowlog
-  tag rds-slowlog
-  host [RDS Hostname]
-  username [RDS Username]
-  password [RDS Password]
+  type                   rds_slowlog_with_sdk
+  tag                    rds-slowlog-with-sdk
+  aws_access_key_id      [RDS Access Key]
+  aws_secret_access_key  [RDS Secret Key]
+  aws_rds_region         ap-northeast-1
+  db_instance_identifier my-rds-server
+  log_file_name          slowquery/mysql-slowquery.log
+  timezone               Asia/Tokyo
+  offset                 +09:00
+  duration_sec           10
+  sns_topic_arn          arn:aws:sns:ap-northeast-1:XXXXXXXXXXXX:sns-topic-arn
 </source>
 
-<match rds-slowlog>
+<match rds-slowlog-with-sdk>
   type copy
  <store>
   type file
@@ -51,9 +64,17 @@ every 10 seconds from AWS RDS.
 
 #### output data format
 
+Format
+
 ```
-2013-03-08T16:04:43+09:00       rds-slowlog     {"start_time":"2013-03-08 07:04:38","user_host":"rds_db[rds_db] @  [192.0.2.10]","query_time":"00:00:00","lock_time":"00:00:00","rows_sent":"3000","rows_examined":"3000","db":"rds_db","last_insert_id":"0","insert_id":"0","server_id":"100000000","sql_text":"select foo from bar"}
-2013-03-08T16:04:43+09:00       rds-slowlog     {"start_time":"2013-03-08 07:04:38","user_host":"rds_db[rds_db] @  [192.0.2.10]","query_time":"00:00:00","lock_time":"00:00:00","rows_sent":"3000","rows_examined":"3000","db":"rds_db","last_insert_id":"0","insert_id":"0","server_id":"100000000","sql_text":"Quit"}
+slow_query_date	tag	record_json
+```
+
+Example
+
+```
+2014-05-29T16:20:04+09:00	rds-slowlog-with-sdk	{"user":"infra[infra]","host":"ip-10-146-157-87.ap-northeast-1.compute.internal","host_ip":"10.146.157.87","query_time":2.007943,"lock_time":0.0,"rows_sent":1,"rows_examined":0,"date":"2014-05-29 16:20:04 +09:00","sql":"SET timestamp=1401348004; select sleep(2);","timezone":"Asia/Tokyo","offset":"+09:00"}
+2014-05-29T16:20:04+09:00	rds-slowlog-with-sdk	{"user":"infra[infra]","host":"ip-10-146-157-87.ap-northeast-1.compute.internal","host_ip":"10.146.157.87","query_time":2.009605,"lock_time":0.0,"rows_sent":1,"rows_examined":0,"date":"2014-05-29 16:20:04 +09:00","sql":"SET timestamp=1401348004; select sleep(2);","timezone":"Asia/Tokyo","offset":"+09:00"}
 ```
 
 #### if not connect
@@ -61,6 +82,6 @@ every 10 seconds from AWS RDS.
 - td-agent.log
 
 ```
-2013-06-29 00:32:55 +0900 [error]: fluent-plugin-rds-slowlog: cannot connect RDS
+2013-06-29 00:32:55 +0900 [error]: fluent-plugin-rds-slowlog-with-sdk: cannot connect RDS
 ```
 

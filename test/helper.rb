@@ -23,7 +23,7 @@ unless ENV.has_key?("VERBOSE")
   $log = nulllogger
 end
 
-require "fluent/plugin/in_rds_slowlog"
+require "fluent/plugin/in_rds_slowlog_with_sdk"
 
 class Test::Unit::TestCase
 end
