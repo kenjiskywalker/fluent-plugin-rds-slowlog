@@ -57,7 +57,7 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
 
     slow_log_data.each do |row|
       row.each_key {|key| row[key].force_encoding(Encoding::ASCII_8BIT) if row[key].is_a?(String)}
-      Fluent::Engine.emit(tag, Fluent::Engine.now, row)
+      router.emit(tag, Fluent::Engine.now, row)
     end
 
     @client.query('CALL mysql.rds_rotate_slow_log')
