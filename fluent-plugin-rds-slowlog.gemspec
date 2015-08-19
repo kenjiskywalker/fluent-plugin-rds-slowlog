@@ -17,4 +17,5 @@ Gem::Specification.new do |gem|
   gem.add_dependency "fluentd", "~> 0.10.30"
   gem.add_dependency "mysql2",  "~> 0.3.11"
   gem.add_development_dependency "rake", ">= 10.0.4"
+  gem.add_development_dependency "test-unit", ">= 3.1.0"
 end
