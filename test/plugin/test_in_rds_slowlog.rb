@@ -14,37 +14,25 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
     def setup_database
       client = Mysql2::Client.new(:username => 'root')
       client.query("GRANT ALL ON *.* TO test_rds_user@localhost IDENTIFIED BY 'test_rds_password'")
-      client.query("DROP TABLE IF EXISTS `mysql`.`slow_log`")
-
-      client.query <<-EOS
-        CREATE TABLE `mysql`.`slow_log` (
-          `start_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          `user_host` mediumtext NOT NULL,
-          `query_time` time NOT NULL,
-          `lock_time` time NOT NULL,
-          `rows_sent` int(11) NOT NULL,
-          `rows_examined` int(11) NOT NULL,
-          `db` varchar(512) NOT NULL,
-          `last_insert_id` int(11) NOT NULL,
-          `insert_id` int(11) NOT NULL,
-          `server_id` int(10) unsigned NOT NULL,
-          `sql_text` mediumtext NOT NULL,
-          `thread_id` bigint(21) unsigned NOT NULL
-        ) ENGINE=CSV DEFAULT CHARSET=utf8 COMMENT='Slow log'
-      EOS
 
       client.query <<-EOS
         CREATE PROCEDURE `mysql`.`rds_rotate_slow_log`()
         BEGIN
+          DECLARE sql_logging BOOLEAN;
+          select @@sql_log_bin into sql_logging;
+          set @@sql_log_bin=off;
           CREATE TABLE IF NOT EXISTS mysql.slow_log2 LIKE mysql.slow_log;
 
-          INSERT INTO `mysql`.`slow_log2` VALUES
-            ('2015-09-29 15:43:44', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 1', 10)
-           ,('2015-09-29 15:43:45', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 2', 11)
+          INSERT INTO `mysql`.`slow_log2` (
+            `start_time`, `user_host`, `query_time`, `lock_time`, `rows_sent`, `rows_examined`, `db`, `last_insert_id`, `insert_id`, `server_id`, `sql_text`)
+          VALUES
+            ('2015-09-29 15:43:44', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 1')
+           ,('2015-09-29 15:43:45', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 2')
           ;
 
           DROP TABLE IF EXISTS mysql.slow_log_backup;
           RENAME TABLE mysql.slow_log TO mysql.slow_log_backup, mysql.slow_log2 TO mysql.slow_log;
+          set @@sql_log_bin=sql_logging;
         END
       EOS
     end
@@ -90,10 +78,14 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
   def test_output
     d = create_driver
     d.run
+    records = d.emits
+
+    # for Travis CI
+    records.each {|r| r[2].delete("thread_id") }
 
     assert_equal [
-      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:44", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 1", "thread_id"=>"10"}],
-      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 2", "thread_id"=>"11"}],
-    ], d.emits
+      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:44", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 1"}],
+      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 2"}],
+    ], records
   end
 end
