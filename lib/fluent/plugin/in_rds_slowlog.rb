@@ -16,6 +16,7 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
   config_param :port,     :integer, :default => 3306
   config_param :username, :string,  :default => nil
   config_param :password, :string,  :default => nil
+  config_param :interval, :integer, :default => 10
 
   def initialize
     super
@@ -51,7 +52,7 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
   private
   def watch
     while true
-      sleep 10
+      sleep @interval
       output
     end
   end
