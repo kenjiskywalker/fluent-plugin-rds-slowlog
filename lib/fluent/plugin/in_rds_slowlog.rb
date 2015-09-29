@@ -6,6 +6,11 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
     define_method("log") { $log }
   end
 
+  # Define `router` method of v0.12 to support v0.10 or earlier
+  unless method_defined?(:router)
+    define_method("router") { Fluent::Engine }
+  end
+
   config_param :tag,      :string
   config_param :host,     :string,  :default => nil
   config_param :port,     :integer, :default => 3306
@@ -57,7 +62,7 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
 
     slow_log_data.each do |row|
       row.each_key {|key| row[key].force_encoding(Encoding::ASCII_8BIT) if row[key].is_a?(String)}
-      Fluent::Engine.emit(tag, Fluent::Engine.now, row)
+      router.emit(tag, Fluent::Engine.now, row)
     end
 
     @client.query('CALL mysql.rds_rotate_slow_log')
