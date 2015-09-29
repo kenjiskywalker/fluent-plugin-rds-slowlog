@@ -40,6 +40,9 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
 
   def start
     super
+    @loop = Coolio::Loop.new
+    timer = TimerWatcher.new(@interval, true, log, &method(:output))
+    @loop.attach(timer)
     @watcher = Thread.new(&method(:watch))
   end
 
@@ -51,10 +54,10 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
 
   private
   def watch
-    while true
-      sleep @interval
-      output
-    end
+    @loop.run
+  rescue => e
+    log.error(e.message)
+    log.error_backtrace(e.backtrace)
   end
 
   def output
@@ -67,5 +70,20 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
     end
 
     @client.query('CALL mysql.rds_rotate_slow_log')
+  end
+
+  class TimerWatcher < Coolio::TimerWatcher
+    def initialize(interval, repeat, log, &callback)
+      @callback = callback
+      @log = log
+      super(interval, repeat)
+    end
+
+    def on_timer
+      @callback.call
+    rescue => e
+      @log.error(e.message)
+      @log.error_backtrace(e.backtrace)
+    end
   end
 end
