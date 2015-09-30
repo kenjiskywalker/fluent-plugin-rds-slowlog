@@ -10,10 +10,10 @@
 - setting `long_query_time`
 
 ## Overview
-***AWS RDS slow_log*** input plugin.  
+***AWS RDS slow_log*** input plugin.
 
-1. **"SELECT * FROM slow_log"**
-2. **"CALL mysql.rds_rotate_slow_log"**
+1. **"CALL mysql.rds_rotate_slow_log"**
+2. **"SELECT * FROM slow_log_backup"**
 
 every 10 seconds from AWS RDS.
 

@@ -6,11 +6,17 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
     define_method("log") { $log }
   end
 
+  # Define `router` method of v0.12 to support v0.10 or earlier
+  unless method_defined?(:router)
+    define_method("router") { Fluent::Engine }
+  end
+
   config_param :tag,      :string
   config_param :host,     :string,  :default => nil
   config_param :port,     :integer, :default => 3306
   config_param :username, :string,  :default => nil
   config_param :password, :string,  :default => nil
+  config_param :interval, :integer, :default => 10
 
   def initialize
     super
@@ -34,6 +40,9 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
 
   def start
     super
+    @loop = Coolio::Loop.new
+    timer = TimerWatcher.new(@interval, true, log, &method(:output))
+    @loop.attach(timer)
     @watcher = Thread.new(&method(:watch))
   end
 
@@ -45,21 +54,36 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
 
   private
   def watch
-    while true
-      sleep 10
-      output
-    end
+    @loop.run
+  rescue => e
+    log.error(e.message)
+    log.error_backtrace(e.backtrace)
   end
 
   def output
+    @client.query('CALL mysql.rds_rotate_slow_log')
+
     slow_log_data = []
-    slow_log_data = @client.query('SELECT * FROM slow_log', :cast => false)
+    slow_log_data = @client.query('SELECT * FROM slow_log_backup', :cast => false)
 
     slow_log_data.each do |row|
       row.each_key {|key| row[key].force_encoding(Encoding::ASCII_8BIT) if row[key].is_a?(String)}
-      Fluent::Engine.emit(tag, Fluent::Engine.now, row)
+      router.emit(tag, Fluent::Engine.now, row)
+    end
+  end
+
+  class TimerWatcher < Coolio::TimerWatcher
+    def initialize(interval, repeat, log, &callback)
+      @callback = callback
+      @log = log
+      super(interval, repeat)
     end
 
-    @client.query('CALL mysql.rds_rotate_slow_log')
+    def on_timer
+      @callback.call
+    rescue => e
+      @log.error(e.message)
+      @log.error_backtrace(e.backtrace)
+    end
   end
 end
