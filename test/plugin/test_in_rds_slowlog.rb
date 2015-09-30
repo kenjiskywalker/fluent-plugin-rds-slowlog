@@ -23,12 +23,7 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
           set @@sql_log_bin=off;
           CREATE TABLE IF NOT EXISTS mysql.slow_log2 LIKE mysql.slow_log;
 
-          INSERT INTO `mysql`.`slow_log2` (
-            `start_time`, `user_host`, `query_time`, `lock_time`, `rows_sent`, `rows_examined`, `db`, `last_insert_id`, `insert_id`, `server_id`, `sql_text`)
-          VALUES
-            ('2015-09-29 15:43:44', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 1')
-           ,('2015-09-29 15:43:45', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 2')
-          ;
+          #{insert_slow_log_sql}
 
           DROP TABLE IF EXISTS mysql.slow_log_backup;
           RENAME TABLE mysql.slow_log TO mysql.slow_log_backup, mysql.slow_log2 TO mysql.slow_log;
@@ -41,6 +36,34 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
       client = Mysql2::Client.new(:username => 'root')
       client.query("DROP USER test_rds_user@localhost")
       client.query("DROP PROCEDURE `mysql`.`rds_rotate_slow_log`")
+    end
+
+    def insert_slow_log_sql
+      if has_thread_id?
+        <<-EOS
+          INSERT INTO `mysql`.`slow_log2` (
+            `start_time`, `user_host`, `query_time`, `lock_time`, `rows_sent`, `rows_examined`, `db`, `last_insert_id`, `insert_id`, `server_id`, `sql_text`, `thread_id`)
+          VALUES
+            ('2015-09-29 15:43:44', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 1', 0)
+           ,('2015-09-29 15:43:45', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 2', 0)
+          ;
+        EOS
+      else
+        <<-EOS
+          INSERT INTO `mysql`.`slow_log2` (
+            `start_time`, `user_host`, `query_time`, `lock_time`, `rows_sent`, `rows_examined`, `db`, `last_insert_id`, `insert_id`, `server_id`, `sql_text`)
+          VALUES
+            ('2015-09-29 15:43:44', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 1')
+           ,('2015-09-29 15:43:45', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 2')
+          ;
+        EOS
+      end
+    end
+
+    def has_thread_id?
+      client = Mysql2::Client.new(:username => 'root')
+      fields = client.query("SHOW FULL FIELDS FROM `mysql`.`slow_log`").map {|r| r['Field'] }
+      fields.include?('thread_id')
     end
   end
 
