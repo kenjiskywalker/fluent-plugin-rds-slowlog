@@ -12,7 +12,7 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
     end
 
     def setup_database
-      client = Mysql2::Client.new(:username => 'root')
+      client = mysql2_client
       client.query("GRANT ALL ON *.* TO test_rds_user@localhost IDENTIFIED BY 'test_rds_password'")
 
       client.query <<-EOS
@@ -23,12 +23,7 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
           set @@sql_log_bin=off;
           CREATE TABLE IF NOT EXISTS mysql.slow_log2 LIKE mysql.slow_log;
 
-          INSERT INTO `mysql`.`slow_log2` (
-            `start_time`, `user_host`, `query_time`, `lock_time`, `rows_sent`, `rows_examined`, `db`, `last_insert_id`, `insert_id`, `server_id`, `sql_text`)
-          VALUES
-            ('2015-09-29 15:43:44', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 1')
-           ,('2015-09-29 15:43:45', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 2')
-          ;
+          #{insert_slow_log_sql}
 
           DROP TABLE IF EXISTS mysql.slow_log_backup;
           RENAME TABLE mysql.slow_log TO mysql.slow_log_backup, mysql.slow_log2 TO mysql.slow_log;
@@ -38,14 +33,46 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
     end
 
     def cleanup_database
-      client = Mysql2::Client.new(:username => 'root')
+      client = mysql2_client
       client.query("DROP USER test_rds_user@localhost")
       client.query("DROP PROCEDURE `mysql`.`rds_rotate_slow_log`")
+    end
+
+    def insert_slow_log_sql
+      if has_thread_id?
+        <<-EOS
+          INSERT INTO `mysql`.`slow_log2` (
+            `start_time`, `user_host`, `query_time`, `lock_time`, `rows_sent`, `rows_examined`, `db`, `last_insert_id`, `insert_id`, `server_id`, `sql_text`, `thread_id`)
+          VALUES
+            ('2015-09-29 15:43:44', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 1', 0)
+           ,('2015-09-29 15:43:45', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 2', 0)
+          ;
+        EOS
+      else
+        <<-EOS
+          INSERT INTO `mysql`.`slow_log2` (
+            `start_time`, `user_host`, `query_time`, `lock_time`, `rows_sent`, `rows_examined`, `db`, `last_insert_id`, `insert_id`, `server_id`, `sql_text`)
+          VALUES
+            ('2015-09-29 15:43:44', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 1')
+           ,('2015-09-29 15:43:45', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 2')
+          ;
+        EOS
+      end
+    end
+
+    def has_thread_id?
+      client = mysql2_client
+      fields = client.query("SHOW FULL FIELDS FROM `mysql`.`slow_log`").map {|r| r['Field'] }
+      fields.include?('thread_id')
+    end
+
+    def mysql2_client
+      Mysql2::Client.new(:username => 'root')
     end
   end
 
   def rotate_slow_log
-    client = Mysql2::Client.new(:username => 'root')
+    client = self.class.mysql2_client
     client.query("CALL `mysql`.`rds_rotate_slow_log`")
   end
 
@@ -80,12 +107,13 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
     d.run
     records = d.emits
 
-    # for Travis CI
-    records.each {|r| r[2].delete("thread_id") }
+    unless self.class.has_thread_id?
+      records.each {|r| r[2]["thread_id"] = "0" }
+    end
 
     assert_equal [
-      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:44", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 1"}],
-      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 2"}],
+      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:44", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 1", "thread_id"=>"0"}],
+      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 2", "thread_id"=>"0"}],
     ], records
   end
 end
