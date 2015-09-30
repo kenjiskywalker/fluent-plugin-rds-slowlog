@@ -38,6 +38,7 @@ every 10 seconds from AWS RDS.
   host [RDS Hostname]
   username [RDS Username]
   password [RDS Password]
+  interval 10
 </source>
 
 <match rds-slowlog>
