@@ -12,7 +12,7 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
     end
 
     def setup_database
-      client = Mysql2::Client.new(:username => 'root')
+      client = mysql2_client
       client.query("GRANT ALL ON *.* TO test_rds_user@localhost IDENTIFIED BY 'test_rds_password'")
 
       client.query <<-EOS
@@ -33,7 +33,7 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
     end
 
     def cleanup_database
-      client = Mysql2::Client.new(:username => 'root')
+      client = mysql2_client
       client.query("DROP USER test_rds_user@localhost")
       client.query("DROP PROCEDURE `mysql`.`rds_rotate_slow_log`")
     end
@@ -61,14 +61,18 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
     end
 
     def has_thread_id?
-      client = Mysql2::Client.new(:username => 'root')
+      client = mysql2_client
       fields = client.query("SHOW FULL FIELDS FROM `mysql`.`slow_log`").map {|r| r['Field'] }
       fields.include?('thread_id')
+    end
+
+    def mysql2_client
+      Mysql2::Client.new(:username => 'root')
     end
   end
 
   def rotate_slow_log
-    client = Mysql2::Client.new(:username => 'root')
+    client = self.class.mysql2_client
     client.query("CALL `mysql`.`rds_rotate_slow_log`")
   end
 
