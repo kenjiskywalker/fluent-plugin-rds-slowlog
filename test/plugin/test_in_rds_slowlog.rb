@@ -36,6 +36,7 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
       client = mysql2_client
       client.query("DROP USER test_rds_user@localhost")
       client.query("DROP PROCEDURE `mysql`.`rds_rotate_slow_log`")
+      client.query("DROP TABLE `mysql`.`slow_log_custom_backup`")
     end
 
     def insert_slow_log_sql
@@ -87,6 +88,7 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
     username test_rds_user
     password test_rds_password
     interval 0
+    custom_table mysql.slow_log_custom_backup
   ]
 
   def create_driver(conf = CONFIG)
@@ -100,6 +102,7 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
     assert_equal 'test_rds_user', d.instance.username
     assert_equal 'test_rds_password', d.instance.password
     assert_equal 0, d.instance.interval
+    assert_equal 'mysql.slow_log_custom_backup', d.instance.custom_table
   end
 
   def test_output
@@ -114,6 +117,28 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
     assert_equal [
       ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:44", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 1", "thread_id"=>"0"}],
       ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 2", "thread_id"=>"0"}],
+    ], records
+  end
+
+  def test_backup
+    d = create_driver
+    d.run
+
+    records = []
+    client = self.class.mysql2_client
+    slow_logs = client.query('SELECT * FROM `mysql`.`slow_log_custom_backup`', :cast => false)
+    slow_logs.each do |row|
+      row.each_key {|key| row[key].force_encoding(Encoding::ASCII_8BIT) if row[key].is_a?(String)}
+      records.push(row)
+    end
+
+    unless self.class.has_thread_id?
+      records.each {|r| r["thread_id"] = "0" }
+    end
+
+    assert_equal [
+      {"start_time"=>"2015-09-29 15:43:44", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 1", "thread_id"=>"0"},
+      {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 2", "thread_id"=>"0"},
     ], records
   end
 end

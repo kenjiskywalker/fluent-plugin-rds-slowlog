@@ -14,6 +14,7 @@
 
 1. **"CALL mysql.rds_rotate_slow_log"**
 2. **"SELECT * FROM slow_log_backup"**
+3. **"INSERT INTO yourdb.slow_log_custom_backup SELECT * FROM slow_log_backup"** (if you want to take a backup)
 
 every 10 seconds from AWS RDS.
 
@@ -26,6 +27,7 @@ every 10 seconds from AWS RDS.
   host [RDS Hostname]
   username [RDS Username]
   password [RDS Password]
+  custom_table [Your Backup Tablename]
 </source>
 ```
 
@@ -39,6 +41,7 @@ every 10 seconds from AWS RDS.
   username [RDS Username]
   password [RDS Password]
   interval 10
+  custom_table [Your Backup Tablename]
 </source>
 
 <match rds-slowlog>
