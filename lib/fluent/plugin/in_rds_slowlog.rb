@@ -41,6 +41,10 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
 
   def start
     super
+    if @backup_table
+      @client.query("CREATE TABLE IF NOT EXISTS #{@backup_table} LIKE slow_log")
+    end
+
     @loop = Coolio::Loop.new
     timer = TimerWatcher.new(@interval, true, log, &method(:output))
     @loop.attach(timer)
@@ -73,7 +77,6 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
     end
 
     if @backup_table
-      @client.query("CREATE TABLE IF NOT EXISTS #{@backup_table} LIKE slow_log")
       @client.query("INSERT INTO #{@backup_table} SELECT * FROM slow_log_backup")
     end
   end
