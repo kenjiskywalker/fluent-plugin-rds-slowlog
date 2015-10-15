@@ -17,7 +17,7 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
   config_param :username,     :string,  :default => nil
   config_param :password,     :string,  :default => nil, :secret => true
   config_param :interval,     :integer, :default => 10
-  config_param :custom_table, :string,  :default => nil
+  config_param :backup_table, :string,  :default => nil
 
   def initialize
     super
@@ -72,9 +72,9 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
       router.emit(tag, Fluent::Engine.now, row)
     end
 
-    if @custom_table
-      @client.query("CREATE TABLE IF NOT EXISTS #{@custom_table} LIKE slow_log")
-      @client.query("INSERT INTO #{@custom_table} SELECT * FROM slow_log_backup")
+    if @backup_table
+      @client.query("CREATE TABLE IF NOT EXISTS #{@backup_table} LIKE slow_log")
+      @client.query("INSERT INTO #{@backup_table} SELECT * FROM slow_log_backup")
     end
   end
 

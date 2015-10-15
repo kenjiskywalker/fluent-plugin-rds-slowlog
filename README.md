@@ -27,7 +27,7 @@ every 10 seconds from AWS RDS.
   host [RDS Hostname]
   username [RDS Username]
   password [RDS Password]
-  custom_table [Your Backup Tablename]
+  backup_table [Your Backup Tablename]
 </source>
 ```
 
@@ -41,7 +41,7 @@ every 10 seconds from AWS RDS.
   username [RDS Username]
   password [RDS Password]
   interval 10
-  custom_table [Your Backup Tablename]
+  backup_table [Your Backup Tablename]
 </source>
 
 <match rds-slowlog>

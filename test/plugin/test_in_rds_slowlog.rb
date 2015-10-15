@@ -88,7 +88,7 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
     username test_rds_user
     password test_rds_password
     interval 0
-    custom_table mysql.slow_log_custom_backup
+    backup_table mysql.slow_log_custom_backup
   ]
 
   def create_driver(conf = CONFIG)
@@ -102,7 +102,7 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
     assert_equal 'test_rds_user', d.instance.username
     assert_equal 'test_rds_password', d.instance.password
     assert_equal 0, d.instance.interval
-    assert_equal 'mysql.slow_log_custom_backup', d.instance.custom_table
+    assert_equal 'mysql.slow_log_custom_backup', d.instance.backup_table
   end
 
   def test_output
