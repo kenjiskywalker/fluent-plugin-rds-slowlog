@@ -11,12 +11,13 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
     define_method("router") { Fluent::Engine }
   end
 
-  config_param :tag,      :string
-  config_param :host,     :string,  :default => nil
-  config_param :port,     :integer, :default => 3306
-  config_param :username, :string,  :default => nil
-  config_param :password, :string,  :default => nil, :secret => true
-  config_param :interval, :integer, :default => 10
+  config_param :tag,          :string
+  config_param :host,         :string,  :default => nil
+  config_param :port,         :integer, :default => 3306
+  config_param :username,     :string,  :default => nil
+  config_param :password,     :string,  :default => nil, :secret => true
+  config_param :interval,     :integer, :default => 10
+  config_param :backup_table, :string,  :default => nil
 
   def initialize
     super
@@ -40,6 +41,10 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
 
   def start
     super
+    if @backup_table
+      @client.query("CREATE TABLE IF NOT EXISTS #{@backup_table} LIKE slow_log")
+    end
+
     @loop = Coolio::Loop.new
     timer = TimerWatcher.new(@interval, true, log, &method(:output))
     @loop.attach(timer)
@@ -69,6 +74,10 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
     slow_log_data.each do |row|
       row.each_key {|key| row[key].force_encoding(Encoding::ASCII_8BIT) if row[key].is_a?(String)}
       router.emit(tag, Fluent::Engine.now, row)
+    end
+
+    if @backup_table
+      @client.query("INSERT INTO #{@backup_table} SELECT * FROM slow_log_backup")
     end
   end
 
