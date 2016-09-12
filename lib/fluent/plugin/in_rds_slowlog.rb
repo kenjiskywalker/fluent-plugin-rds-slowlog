@@ -29,13 +29,7 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
   def configure(conf)
     super
     begin
-      @client = Mysql2::Client.new({
-        :host => @host,
-        :port => @port,
-        :username => @username,
-        :password => @password,
-        :database => 'mysql'
-      })
+      @client = create_mysql_client
     rescue
       log.error "fluent-plugin-rds-slowlog: cannot connect RDS"
     end
@@ -81,6 +75,24 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
     if @backup_table
       @client.query("INSERT INTO #{@backup_table} SELECT * FROM slow_log_backup")
     end
+  rescue Mysql2::Error => e
+    @log.error(e.message)
+    @log.error_backtrace(e.backtrace)
+
+    unless @client.ping
+      @log.info('fluent-plugin-rds-slowlog: try to reconnect to RDS')
+      @client = create_mysql_client
+    end
+  end
+
+  def create_mysql_client
+    Mysql2::Client.new({
+      :host => @host,
+      :port => @port,
+      :username => @username,
+      :password => @password,
+      :database => 'mysql'
+    })
   end
 
   class TimerWatcher < Coolio::TimerWatcher
