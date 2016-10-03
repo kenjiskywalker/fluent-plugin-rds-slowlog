@@ -8,3 +8,4 @@ rvm:
   - 2.2
 
 script: bundle exec rake test
+before_install: gem update bundler
