@@ -15,7 +15,6 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
 
-
   if RUBY_VERSION > '2.0.0'
     gem.add_dependency "fluentd"
   elsif RUBY_VERSION > '1.9.2'
