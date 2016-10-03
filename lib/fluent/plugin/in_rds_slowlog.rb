@@ -1,3 +1,5 @@
+require 'fluent/input'
+
 class Fluent::Rds_SlowlogInput < Fluent::Input
   Fluent::Plugin.register_input("rds_slowlog", self)
 
