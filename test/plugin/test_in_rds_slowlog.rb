@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'helper'
 
 class Rds_SlowlogInputTest < Test::Unit::TestCase
@@ -47,6 +48,7 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
           VALUES
             ('2015-09-29 15:43:44', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 1', 0)
            ,('2015-09-29 15:43:45', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 2', 0)
+           ,('2015-09-29 15:43:45', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 3 -- テスト', 0)
           ;
         EOS
       else
@@ -56,6 +58,7 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
           VALUES
             ('2015-09-29 15:43:44', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 1')
            ,('2015-09-29 15:43:45', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 2')
+           ,('2015-09-29 15:43:45', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 3 -- テスト')
           ;
         EOS
       end
@@ -114,9 +117,12 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
       records.each {|r| r[2]["thread_id"] = "0" }
     end
 
+    records.each {|r| assert_equal Encoding::ASCII_8BIT, r[2]['sql_text'].encoding }
+
     assert_equal [
       ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:44", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 1", "thread_id"=>"0"}],
       ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 2", "thread_id"=>"0"}],
+      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 3 -- #{"テスト".force_encoding(Encoding::ASCII_8BIT)}", "thread_id"=>"0"}],
     ], records
   end
 
@@ -139,6 +145,7 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
     assert_equal [
       {"start_time"=>"2015-09-29 15:43:44", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 1", "thread_id"=>"0"},
       {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 2", "thread_id"=>"0"},
+      {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 3 -- #{"テスト".force_encoding(Encoding::ASCII_8BIT)}", "thread_id"=>"0"},
     ], records
   end
 end
