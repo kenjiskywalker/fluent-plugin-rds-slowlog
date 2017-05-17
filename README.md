@@ -31,7 +31,7 @@ every 10 seconds from AWS RDS.
 </source>
 ```
 
-### Example GET RDS slow_log
+### Example: GET RDS slow_log
 
 ```config
 <source>
@@ -68,3 +68,31 @@ every 10 seconds from AWS RDS.
 2013-06-29 00:32:55 +0900 [error]: fluent-plugin-rds-slowlog: cannot connect RDS
 ```
 
+### Example: Encode output string
+
+Specify the encoding of output string. The default is ASCII-8BIT.
+
+```config
+<source>
+  ...
+  encoding UTF-8
+</source>
+```
+
+- If specify only encoding, the plugin changes string to encoding. This use ruby's [String#force_encoding](https://docs.ruby-lang.org/en/trunk/String.html#method-i-force_encoding)
+
+```config
+<source>
+  ...
+  encoding CP932
+  from_encoding UTF-8
+</source>
+```
+
+- If specify encoding and from_encoding, the plugin tries to encode string from from_encoding to encoding. This uses ruby's [String#encode](https://docs.ruby-lang.org/en/trunk/String.html#method-i-encode)
+
+You can get supported encoding list by typing following command:
+
+```
+$ ruby -e 'p Encoding.name_list.sort'
+```
