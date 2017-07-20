@@ -14,10 +14,6 @@ class Fluent::Plugin::Rds_SlowlogInput < Fluent::Plugin::Input
   config_param :interval,     :integer, :default => 10
   config_param :backup_table, :string,  :default => nil
 
-  def initialize
-    super
-  end
-
   def configure(conf)
     super
     begin
@@ -34,10 +30,6 @@ class Fluent::Plugin::Rds_SlowlogInput < Fluent::Plugin::Input
     end
 
     timer_execute(:in_rds_slowlog_timer, @interval, &method(:output))
-  end
-
-  def shutdown
-    super
   end
 
   private
