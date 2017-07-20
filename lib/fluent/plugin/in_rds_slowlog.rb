@@ -5,16 +5,6 @@ class Fluent::Plugin::Rds_SlowlogInput < Fluent::Plugin::Input
 
   helpers :timer
 
-  # To support log_level option implemented by Fluentd v0.10.43
-  unless method_defined?(:log)
-    define_method("log") { $log }
-  end
-
-  # Define `router` method of v0.12 to support v0.10 or earlier
-  unless method_defined?(:router)
-    define_method("router") { Fluent::Engine }
-  end
-
   config_param :tag,          :string
   config_param :host,         :string,  :default => nil
   config_param :port,         :integer, :default => 3306
