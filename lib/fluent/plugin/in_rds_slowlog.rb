@@ -1,3 +1,4 @@
+require 'mysql2'
 require 'fluent/plugin/input'
 
 class Fluent::Plugin::Rds_SlowlogInput < Fluent::Plugin::Input
@@ -15,7 +16,6 @@ class Fluent::Plugin::Rds_SlowlogInput < Fluent::Plugin::Input
 
   def initialize
     super
-    require 'mysql2'
   end
 
   def configure(conf)
