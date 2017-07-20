@@ -116,8 +116,8 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
     end
 
     assert_equal [
-      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:44.000000", "user_host"=>"root@localhost", "query_time"=>"00:00:00.000000", "lock_time"=>"00:00:00.000000", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 1", "thread_id"=>"0"}],
-      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:45.000000", "user_host"=>"root@localhost", "query_time"=>"00:00:00.000000", "lock_time"=>"00:00:00.000000", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 2", "thread_id"=>"0"}],
+      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:44", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 1", "thread_id"=>"0"}],
+      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 2", "thread_id"=>"0"}],
     ], records
   end
 
@@ -138,8 +138,8 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
     end
 
     assert_equal [
-      {"start_time"=>"2015-09-29 15:43:44.000000", "user_host"=>"root@localhost", "query_time"=>"00:00:00.000000", "lock_time"=>"00:00:00.000000", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 1", "thread_id"=>"0"},
-      {"start_time"=>"2015-09-29 15:43:45.000000", "user_host"=>"root@localhost", "query_time"=>"00:00:00.000000", "lock_time"=>"00:00:00.000000", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 2", "thread_id"=>"0"},
+      {"start_time"=>"2015-09-29 15:43:44", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 1", "thread_id"=>"0"},
+      {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 2", "thread_id"=>"0"},
     ], records
   end
 end
