@@ -10,6 +10,7 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
 
     def shutdown
       cleanup_database
+      Timecop.return
     end
 
     def setup_database
