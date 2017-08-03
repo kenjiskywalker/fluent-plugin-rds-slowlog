@@ -1,17 +1,10 @@
-require 'fluent/input'
+require 'mysql2'
+require 'fluent/plugin/input'
 
-class Fluent::Rds_SlowlogInput < Fluent::Input
+class Fluent::Plugin::Rds_SlowlogInput < Fluent::Plugin::Input
   Fluent::Plugin.register_input("rds_slowlog", self)
 
-  # To support log_level option implemented by Fluentd v0.10.43
-  unless method_defined?(:log)
-    define_method("log") { $log }
-  end
-
-  # Define `router` method of v0.12 to support v0.10 or earlier
-  unless method_defined?(:router)
-    define_method("router") { Fluent::Engine }
-  end
+  helpers :timer
 
   config_param :tag,          :string
   config_param :host,         :string,  :default => nil
@@ -20,11 +13,6 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
   config_param :password,     :string,  :default => nil, :secret => true
   config_param :interval,     :integer, :default => 10
   config_param :backup_table, :string,  :default => nil
-
-  def initialize
-    super
-    require 'mysql2'
-  end
 
   def configure(conf)
     super
@@ -41,26 +29,10 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
       @client.query("CREATE TABLE IF NOT EXISTS #{@backup_table} LIKE slow_log")
     end
 
-    @loop = Coolio::Loop.new
-    timer = TimerWatcher.new(@interval, true, log, &method(:output))
-    @loop.attach(timer)
-    @watcher = Thread.new(&method(:watch))
-  end
-
-  def shutdown
-    super
-    @watcher.terminate
-    @watcher.join
+    timer_execute(:in_rds_slowlog_timer, @interval, &method(:output))
   end
 
   private
-  def watch
-    @loop.run
-  rescue => e
-    log.error(e.message)
-    log.error_backtrace(e.backtrace)
-  end
-
   def output
     @client.query('CALL mysql.rds_rotate_slow_log')
 
@@ -93,20 +65,5 @@ class Fluent::Rds_SlowlogInput < Fluent::Input
       :password => @password,
       :database => 'mysql'
     })
-  end
-
-  class TimerWatcher < Coolio::TimerWatcher
-    def initialize(interval, repeat, log, &callback)
-      @callback = callback
-      @log = log
-      super(interval, repeat)
-    end
-
-    def on_timer
-      @callback.call
-    rescue => e
-      @log.error(e.message)
-      @log.error_backtrace(e.backtrace)
-    end
   end
 end

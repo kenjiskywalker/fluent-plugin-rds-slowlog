@@ -15,23 +15,8 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
 
-  if RUBY_VERSION > '2.0.0'
-    gem.add_dependency "fluentd"
-  elsif RUBY_VERSION > '1.9.2'
-    gem.add_dependency "fluentd", "~> 0.12.29"
-  else
-    gem.add_dependency "fluentd", "<= 0.10.55"
-  end
-
-  if RUBY_VERSION <= '2.0.0'
-    gem.add_dependency "json", "< 2"
-  end
-
-  if RUBY_VERSION <= '1.9.2'
-    gem.add_development_dependency "rake", "<= 11"
-  else
-    gem.add_development_dependency "rake", ">= 10.0.4"
-  end
+  gem.add_dependency "fluentd", [">= 0.14.0", "< 2"]
+  gem.add_development_dependency "rake", ">= 10.0.4"
 
   gem.add_dependency "mysql2",  "~> 0.3.11"
   gem.add_development_dependency "test-unit", "~> 3.1.3"

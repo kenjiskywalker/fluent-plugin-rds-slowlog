@@ -1,4 +1,5 @@
 require 'helper'
+require 'fluent/test/driver/input'
 
 class Rds_SlowlogInputTest < Test::Unit::TestCase
   class << self
@@ -9,6 +10,7 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
 
     def shutdown
       cleanup_database
+      Timecop.return
     end
 
     def setup_database
@@ -92,7 +94,7 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
   ]
 
   def create_driver(conf = CONFIG)
-    Fluent::Test::InputTestDriver.new(Fluent::Rds_SlowlogInput).configure(conf)
+    Fluent::Test::Driver::Input.new(Fluent::Plugin::Rds_SlowlogInput).configure(conf)
   end
 
   def test_configure
@@ -107,8 +109,8 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
 
   def test_output
     d = create_driver
-    d.run
-    records = d.emits
+    d.run(expect_emits: 2)
+    records = d.events
 
     unless self.class.has_thread_id?
       records.each {|r| r[2]["thread_id"] = "0" }
@@ -122,7 +124,7 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
 
   def test_backup
     d = create_driver
-    d.run
+    d.run(expect_emits: 2)
 
     records = []
     client = self.class.mysql2_client
