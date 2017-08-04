@@ -13,10 +13,10 @@ class Fluent::Plugin::Rds_SlowlogInput < Fluent::Plugin::Input
   config_param :password,     :string,  :default => nil, :secret => true
   config_param :interval,     :integer, :default => 10
   config_param :backup_table, :string,  :default => nil
-  # The encoding after conversion of the input.
-  config_param :encoding, :string, default: nil
-  # The encoding of the input.
-  config_param :from_encoding, :string, default: nil
+  config_param :encoding, :string, default: nil,
+               :desc => 'The encoding after conversion of the input.'
+  config_param :from_encoding, :string, default: nil,
+               :desc => 'The encoding of the input.'
 
   def configure_encoding
     unless @encoding
