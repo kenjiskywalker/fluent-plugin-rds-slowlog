@@ -176,8 +176,8 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
 
   def test_transcode_with_encoding
     d = create_driver(CONFIG_WITH_ENCODING)
-    d.run
-    records = d.emits
+    d.run(expect_emits: 2)
+    records = d.events
 
     unless self.class.has_thread_id?
       records.each {|r| r[2]["thread_id"] = "0" }
@@ -194,8 +194,8 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
 
   def test_transcode_with_encoding_fromencoding
     d = create_driver(CONFIG_WITH_ENCODING_AND_FROMENCODING)
-    d.run
-    records = d.emits
+    d.run(expect_emits: 2)
+    records = d.events
 
     unless self.class.has_thread_id?
       records.each {|r| r[2]["thread_id"] = "0" }
