@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'helper'
 require 'fluent/test/driver/input'
 
@@ -49,6 +50,7 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
           VALUES
             ('2015-09-29 15:43:44', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 1', 0)
            ,('2015-09-29 15:43:45', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 2', 0)
+           ,('2015-09-29 15:43:45', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 3 -- テスト', 0)
           ;
         EOS
       else
@@ -58,6 +60,7 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
           VALUES
             ('2015-09-29 15:43:44', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 1')
            ,('2015-09-29 15:43:45', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 2')
+           ,('2015-09-29 15:43:45', 'root@localhost', '00:00:00', '00:00:00', 0, 0, 'employees', 0, 0, 1, 'SELECT 3 -- テスト')
           ;
         EOS
       end
@@ -93,6 +96,27 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
     backup_table mysql.slow_log_custom_backup
   ]
 
+  CONFIG_WITH_ENCODING = %[
+    tag rds-slowlog
+    host localhost
+    username test_rds_user
+    password test_rds_password
+    interval 0
+    backup_table mysql.slow_log_custom_backup
+    encoding UTF-8
+  ]
+
+  CONFIG_WITH_ENCODING_AND_FROMENCODING = %[
+    tag rds-slowlog
+    host localhost
+    username test_rds_user
+    password test_rds_password
+    interval 0
+    backup_table mysql.slow_log_custom_backup
+    encoding CP932
+    from_encoding UTF-8
+  ]
+
   def create_driver(conf = CONFIG)
     Fluent::Test::Driver::Input.new(Fluent::Plugin::Rds_SlowlogInput).configure(conf)
   end
@@ -105,6 +129,8 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
     assert_equal 'test_rds_password', d.instance.password
     assert_equal 0, d.instance.interval
     assert_equal 'mysql.slow_log_custom_backup', d.instance.backup_table
+    assert_equal nil, d.instance.encoding
+    assert_equal nil, d.instance.from_encoding
   end
 
   def test_output
@@ -116,9 +142,12 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
       records.each {|r| r[2]["thread_id"] = "0" }
     end
 
+    records.each {|r| assert_equal Encoding::ASCII_8BIT, r[2]['sql_text'].encoding }
+
     assert_equal [
       ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:44", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 1", "thread_id"=>"0"}],
       ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 2", "thread_id"=>"0"}],
+      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 3 -- #{"テスト".force_encoding(Encoding::ASCII_8BIT)}", "thread_id"=>"0"}],
     ], records
   end
 
@@ -141,6 +170,43 @@ class Rds_SlowlogInputTest < Test::Unit::TestCase
     assert_equal [
       {"start_time"=>"2015-09-29 15:43:44", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 1", "thread_id"=>"0"},
       {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 2", "thread_id"=>"0"},
+      {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 3 -- #{"テスト".force_encoding(Encoding::ASCII_8BIT)}", "thread_id"=>"0"},
+    ], records
+  end
+
+  def test_transcode_with_encoding
+    d = create_driver(CONFIG_WITH_ENCODING)
+    d.run(expect_emits: 2)
+    records = d.events
+
+    unless self.class.has_thread_id?
+      records.each {|r| r[2]["thread_id"] = "0" }
+    end
+
+    records.each {|r| assert_equal Encoding::UTF_8, r[2]['sql_text'].encoding }
+
+    assert_equal [
+      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:44", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 1", "thread_id"=>"0"}],
+      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 2", "thread_id"=>"0"}],
+      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 3 -- #{"テスト".force_encoding(Encoding::UTF_8)}", "thread_id"=>"0"}],
+    ], records
+  end
+
+  def test_transcode_with_encoding_fromencoding
+    d = create_driver(CONFIG_WITH_ENCODING_AND_FROMENCODING)
+    d.run(expect_emits: 2)
+    records = d.events
+
+    unless self.class.has_thread_id?
+      records.each {|r| r[2]["thread_id"] = "0" }
+    end
+
+    records.each {|r| assert_equal Encoding::CP932, r[2]['sql_text'].encoding }
+
+    assert_equal [
+      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:44", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 1", "thread_id"=>"0"}],
+      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 2", "thread_id"=>"0"}],
+      ["rds-slowlog", 1432492200, {"start_time"=>"2015-09-29 15:43:45", "user_host"=>"root@localhost", "query_time"=>"00:00:00", "lock_time"=>"00:00:00", "rows_sent"=>"0", "rows_examined"=>"0", "db"=>"employees", "last_insert_id"=>"0", "insert_id"=>"0", "server_id"=>"1", "sql_text"=>"SELECT 3 -- #{"テスト".encode(Encoding::CP932, Encoding::UTF_8)}", "thread_id"=>"0"}],
     ], records
   end
 end

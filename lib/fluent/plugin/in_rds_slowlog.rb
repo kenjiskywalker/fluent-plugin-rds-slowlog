@@ -13,9 +13,34 @@ class Fluent::Plugin::Rds_SlowlogInput < Fluent::Plugin::Input
   config_param :password,     :string,  :default => nil, :secret => true
   config_param :interval,     :integer, :default => 10
   config_param :backup_table, :string,  :default => nil
+  config_param :encoding, :string, default: nil,
+               :desc => 'The encoding after conversion of the input.'
+  config_param :from_encoding, :string, default: nil,
+               :desc => 'The encoding of the input.'
+
+  def configure_encoding
+    unless @encoding
+      if @from_encoding
+        raise Fluent::ConfigError, "fluent-plugin-rds-slowlog: 'from_encoding' parameter must be specified with 'encoding' parameter."
+      end
+    end
+
+    @encoding = parse_encoding_param(@encoding) if @encoding
+    @from_encoding = parse_encoding_param(@from_encoding) if @from_encoding
+  end
+
+  def parse_encoding_param(encoding_name)
+    begin
+      Encoding.find(encoding_name) if encoding_name
+    rescue ArgumentError => e
+      raise Fluent::ConfigError, e.message
+    end
+  end
 
   def configure(conf)
     super
+    configure_encoding
+
     begin
       @client = create_mysql_client
     rescue
@@ -40,7 +65,7 @@ class Fluent::Plugin::Rds_SlowlogInput < Fluent::Plugin::Input
     slow_log_data = @client.query('SELECT * FROM slow_log_backup', :cast => false)
 
     slow_log_data.each do |row|
-      row.each_key {|key| row[key].force_encoding(Encoding::ASCII_8BIT) if row[key].is_a?(String)}
+      row.each_key {|key| transcode(row[key]) if row[key].is_a?(String)}
       router.emit(tag, Fluent::Engine.now, row)
     end
 
@@ -65,5 +90,17 @@ class Fluent::Plugin::Rds_SlowlogInput < Fluent::Plugin::Input
       :password => @password,
       :database => 'mysql'
     })
+  end
+
+  def transcode(value)
+    if @encoding
+      if @from_encoding
+        value.encode!(@encoding, @from_encoding)
+      else
+        value.force_encoding(@encoding)
+      end
+    else
+      value.force_encoding(Encoding::ASCII_8BIT)
+    end
   end
 end
